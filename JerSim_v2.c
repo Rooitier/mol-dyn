@@ -6,7 +6,7 @@
 
 /* Defintions */
 
-#define PartNo 30 // Number of particles
+#define PartNo 100 // Number of particles
 #define Dim 2 // Box dimension
 #define TwoPi 6.283185307 // 2Pi
 #define Filenamelength 100 // Max characters for a file name eg. test1
@@ -33,12 +33,12 @@ double sampgauss(double temp){
 }
 /* L-J potential force */
 
-void lj_force (double pos[PartNo][Dim], double f_net[PartNo][Dim]){
+void lj_force (double pos[PartNo][Dim], double acc[PartNo][Dim]){
     double f_lj, r;
     int i, j, d;
     for (i=0; i<PartNo; i++){
 	    for (d=0; d < Dim; d++){
-		f_net[i][d] = 0.0;
+		acc[i][d] = 0.0;
             for (j = i+1; j < PartNo; j++){
 		    r = sqrt(pow(pos[i][0]-pos[j][0],2) + pow(pos[i][1]-pos[j][1],2)); // Distance calculation
 
@@ -48,8 +48,8 @@ void lj_force (double pos[PartNo][Dim], double f_net[PartNo][Dim]){
 		else if (r > 2.5*sig){
 		 	f_lj = 0.0;
 		} 
-        f_net[i][d] += f_lj;
-        f_net[j][d] -= f_lj;
+        acc[i][d] += f_lj;
+        acc[j][d] -= f_lj;
         }
     }                 
 }
@@ -111,16 +111,16 @@ void initpart (double pos[PartNo][Dim], double vel[PartNo][Dim], double temperat
 void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[PartNo][Dim], double dt, double *t, double *KinE, double boxdims[Dim]){
 
 	int i, d;
-	double out_pos, newvel, newpos, newacc, f_net[PartNo][Dim];
+	double out_pos, newvel, newpos, newacc;
 
 	*KinE = 0.0;
-    lj_force(pos, f_net);
+    lj_force(pos, acc);
 	for (i=0; i<PartNo; i++){
 		for (d=0; d<Dim; d++){
             out_pos = pos[i][d];
             
             newpos = out_pos + vel[i][d] * dt;
-            vel[i][d] += 0.5 * f_net[i][d] * dt;
+            vel[i][d] += 0.5 * acc[i][d] * dt;
 			while (out_pos > boxdims[d]){
 			
 				out_pos -=  boxdims[d]; // Check the positions of the particles in the loop and updates it. 
@@ -134,15 +134,14 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
 
             
 		pos[i][d] = newpos;
-		f_net[i][d] = 0.0;
 
 		
 		}
 	}
-    lj_force(pos, f_net);
+    lj_force(pos, acc);
     for (i=0; i<PartNo; i++){
         for (d=0; d<Dim; d++){
-            vel[i][d] += 0.5 * dt * f_net[i][d];
+            vel[i][d] += 0.5 * dt * acc[i][d];
             *KinE += 0.5*vel[i][d]*vel[i][d];
         
         }
@@ -188,7 +187,7 @@ void writeenergies(double KinE, double t, char filename[Filenamelength], double 
     strcpy(filenameupdated, filename);
     strcat(filenameupdated, "_E_list.txt"); // data written to filename that is pure text space seperated into 4 columns
     
-    KineFile = fopen(filenameupdated, "w");
+    KineFile = fopen(filenameupdated, "a");
 
     fprintf(KineFile, "%f %f %f %f\n", t, KinE, v_pot, KinE + v_pot);
     
@@ -257,7 +256,7 @@ int main(int argc, const char *argv[]) {
     double curr_time=0.0, deltat, endtime; // Time initialisation
     double VCoM =0.0; // Centre-of-velocity
     double Kinetic=0.0; // Temporary storage of kinetic energy
-    double Potential=0.0;
+    double Potential=0.0; // Storage of potential energy
     double positions[PartNo][Dim]; // 2D array for particle positions
     double velocities[PartNo][Dim]; // 2D array for particle vel
     double accelerations[PartNo][Dim]; // 2D array for particle accelerations
@@ -278,9 +277,8 @@ int main(int argc, const char *argv[]) {
     
     
     initpart(positions, velocities, initi_temp, boxdims);
-    
+    lj_force(positions, accelerations);
     startmathematica(outputfilename);
-    
     while (curr_time < endtime) {
         
         // calaccel(positions, accelerations);
