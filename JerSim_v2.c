@@ -10,9 +10,9 @@
 #define Dim 2 // Box dimension
 #define TwoPi 6.283185307 // 2Pi
 #define Filenamelength 100 // Max characters for a file name eg. test1
-#define sig 0.7
-#define eps 0.9
-#define r_shift 0.5*sig
+#define sig 1
+#define eps 1
+#define r_shift 2.5*sig
 /*-----------------*/
 
 
@@ -186,9 +186,9 @@ void writeenergies(double KinE, double t, char filename[Filenamelength], double 
     FILE *KineFile;
     
     strcpy(filenameupdated, filename);
-    strcat(filenameupdated, "_E_list.txt"); // data written to filename that is pure text
+    strcat(filenameupdated, "_E_list.txt"); // data written to filename that is pure text space seperated into 4 columns
     
-    KineFile = fopen(filenameupdated, "a");
+    KineFile = fopen(filenameupdated, "w");
 
     fprintf(KineFile, "%f %f %f %f\n", t, KinE, v_pot, KinE + v_pot);
     
