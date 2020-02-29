@@ -111,25 +111,25 @@ void initpart (double pos[PartNo][Dim], double vel[PartNo][Dim], double temperat
 void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[PartNo][Dim], double dt, double *t, double *KinE, double boxdims[Dim]){
 
 	int i, d;
-	double out_pos, newvel, newpos, newacc;
+	double newvel, newpos, newacc;
 
 	*KinE = 0.0;
-    lj_force(pos, acc);
+
     
 	for (i=0; i<PartNo; i++){
 		for (d=0; d<Dim; d++){
-            out_pos = pos[i][d];
             
-            newpos = out_pos + vel[i][d] * dt;
+            
+            newpos = pos[i][d]+ vel[i][d] * dt;
             vel[i][d] += 0.5 * acc[i][d] * dt;
-			while (out_pos > boxdims[d]){
+			while (newpos > boxdims[d]){
 			
-				out_pos -=  boxdims[d]; // Check the positions of the particles in the loop and updates it. 
+				newpos -=  boxdims[d]; // Check the positions of the particles in the loop and updates it. 
 
             }
-            while (out_pos < 0)
+            while (newpos < 0)
             {
-                out_pos += boxdims[d];
+                newpos += boxdims[d];
             }
 
 
@@ -139,6 +139,7 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
 		
 		}
 	}
+    lj_force(pos,acc);
     for (i=0; i<PartNo; i++){
         for (d=0; d<Dim; d++){
             vel[i][d] += 0.5 * dt * acc[i][d];
@@ -278,7 +279,6 @@ int main(int argc, const char *argv[]) {
     
     
     initpart(positions, velocities, initi_temp, boxdims);
-    
     lj_force(positions, accelerations);
     //startmathematica(outputfilename);
     while (curr_time < endtime) {
