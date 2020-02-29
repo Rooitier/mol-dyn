@@ -13,7 +13,7 @@ totE = data_file[:,3]
 
 plt.plot(time,kine, label = "Kinetic Energy")
 plt.plot(time, pote, label = "Potential Energy")
-plt.plot(time, totE, label = "Total Energy")
+plt.plot(time, totE, label = "Total Energy", linestyle = '--', color ='r')
 plt.legend()
 plt.show()
 plt.savefig('Energy_Plots.png')

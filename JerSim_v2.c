@@ -6,7 +6,7 @@
 
 /* Defintions */
 
-#define PartNo 100 // Number of particles
+#define PartNo 50 // Number of particles
 #define Dim 2 // Box dimension
 #define TwoPi 6.283185307 // 2Pi
 #define Filenamelength 100 // Max characters for a file name eg. test1
@@ -115,6 +115,7 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
 
 	*KinE = 0.0;
     lj_force(pos, acc);
+    
 	for (i=0; i<PartNo; i++){
 		for (d=0; d<Dim; d++){
             out_pos = pos[i][d];
@@ -134,11 +135,10 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
 
             
 		pos[i][d] = newpos;
-
+        acc[i][d] = 0.0;
 		
 		}
 	}
-    lj_force(pos, acc);
     for (i=0; i<PartNo; i++){
         for (d=0; d<Dim; d++){
             vel[i][d] += 0.5 * dt * acc[i][d];
@@ -203,7 +203,7 @@ void writeenergies(double KinE, double t, char filename[Filenamelength], double 
 
 
 
-void tidyupmathematicafile(double pos[PartNo][Dim], char filename[Filenamelength], double boxdims[Dim]){
+/* void tidyupmathematicafile(double pos[PartNo][Dim], char filename[Filenamelength], double boxdims[Dim]){
     
     int i;
     char filenameupdated[Filenamelength];
@@ -244,7 +244,8 @@ void startmathematica(char filename[Filenamelength]){
     
     fclose(posfile);
     
-}
+} 
+*/
 
 
 /*Main function */
@@ -277,27 +278,28 @@ int main(int argc, const char *argv[]) {
     
     
     initpart(positions, velocities, initi_temp, boxdims);
+    
     lj_force(positions, accelerations);
-    startmathematica(outputfilename);
+    //startmathematica(outputfilename);
     while (curr_time < endtime) {
         
         // calaccel(positions, accelerations);
         
         move_part(positions, velocities, accelerations, deltat, &curr_time, &Kinetic, boxdims);
-        
+        lj_pot(positions, &Potential);
         stepssinceoutput += 1;
         
         if (stepssinceoutput == outputinterval) {
             stepssinceoutput=0;
-            lj_pot(positions, & Potential);
-            writepositions (positions, outputfilename, boxdims);
+
+           // writepositions (positions, outputfilename, boxdims);
             writeenergies (Kinetic, curr_time, outputfilename, Potential);
             
         }
         
     }
     
-    tidyupmathematicafile(positions, outputfilename, boxdims);
+    //tidyupmathematicafile(positions, outputfilename, boxdims);
     
     
 }
