@@ -1,4 +1,8 @@
-                                                                                                                                                                                                                                                                    
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>                                                                                                                                                                                                                                                                   
 
 /* Defintions */
 
@@ -47,6 +51,7 @@ void lj_force (double pos[PartNo][Dim], double acc[PartNo][Dim]){
         }
     }                 
     }
+}
 /* L-J potential */
 void lj_pot (double pos[PartNo][Dim], double *v_pot){
     int i, j;
@@ -135,27 +140,56 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
     *t += dt;
 } 
 /* Periodic interactions */
-void per_int (double pos[PartNo][Dim], double acc[PartNo][Dim], double boxdims[Dim]){
+void per_int (double pos[PartNo][Dim], double boxdims[Dim]){
 
-double *per_arr = malloc(sizeof(3*PartNo))
-int i, n, d;
+    int *per_arr = malloc(sizeof(3*PartNo));
+    int i, k;
 
-for ( i = 0; i < PartNo; i++)
+for (i = 0; i < PartNo; i++)
 {
     if (pos[i][0] < 2.5*sig && pos[i][1] < 2.5*sig)
     {
-        per_arr[k][0] = pos[i][0] + boxdims[0]
-        per_arr[k][1] = pos[i][1]
-        k++
+        per_arr[k] = pos[i][0] + boxdims[0] + pos[i][1] + boxdims[1];
+        k++;
     }
-    /* TODO: Complete sorting out the boundary conditions for the array interactions */
+    if (pos[i][0] < boxdims[0] && pos [i][1] < 2.5*sig)
+    {
+        per_arr[k] = pos[i][0] + pos[i][1] + boxdims[1];
+        k++;
+    }
+    if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] < 2.5*sig)
+    {
+        per_arr[k] = pos[i][0] - boxdims[0] + pos[i][1] + boxdims[1];
+        k++;
+    }
+    if (pos[i][0] < 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig)
+    {
+        per_arr[k] = pos[i][0] + boxdims[0] + pos[i][1] - boxdims[1];
+        k++;
+    }
+    if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig)
+    {
+        per_arr[k] = pos[i][0] - boxdims[0] + pos[i][1] - boxdims[1];
+        k++;
+    }
+    if (pos[i][0] < 2.5*sig && pos[i][1] < boxdims[1])
+    {
+        per_arr[k] = pos[i][0] + boxdims[0] + pos[i][1];
+        k++;
+    }
+    if (pos[i][0] < boxdims[0] && pos[i][1] > boxdims[1] - 2.5*sig)
+    {
+        per_arr[k] = pos[i][0] + pos[i][1] - boxdims[1];
+        k++;
+    }
+    if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig)
+    {
+        per_arr[k] = pos[i][0] - boxdims[0] + pos[i][1];
+        k++;
+    }
 }
-
-        
 }
-
-
-
+    
 /* The energies are written to a simple text file: timestamp, kinetic energy and potetial energy. */
 void writeenergies(double KinE, double t, char filename[Filenamelength], double v_pot){
     
@@ -273,7 +307,7 @@ int main(int argc, const char *argv[]) {
 
     printf("code has read in delta t= %.4e end time=%.4e interval for data=%d\n box x=%.4e box y=%.4e initial t=%.4e file=%s\n",deltat, endtime, outputinterval, boxdims[0], boxdims[1], initi_temp, outputfilename);
     
-    
+    per_int(positions, boxdims);
     initpart(positions, velocities, initi_temp, boxdims);
     lj_force(positions, accelerations);
     //startmathematica(outputfilename);
