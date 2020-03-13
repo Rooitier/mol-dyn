@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+                                                                                                                                                                                                                                                                    
 
 /* Defintions */
 
@@ -17,7 +13,6 @@
 
 
 /* Box-Muller transformation is used to produce random samples for the Maxwell distribution which will be used to provide the intial values of the speed of the particles */
-
 double sampgauss(double temp){
 
 	double u1, u2, z0;
@@ -32,7 +27,6 @@ double sampgauss(double temp){
 
 }
 /* L-J potential force */
-
 void lj_force (double pos[PartNo][Dim], double acc[PartNo][Dim]){
     double f_lj, r;
     int i, j, d;
@@ -52,8 +46,8 @@ void lj_force (double pos[PartNo][Dim], double acc[PartNo][Dim]){
         acc[j][d] -= f_lj;
         }
     }                 
-}
-}
+    }
+/* L-J potential */
 void lj_pot (double pos[PartNo][Dim], double *v_pot){
     int i, j;
     double r;
@@ -70,11 +64,8 @@ void lj_pot (double pos[PartNo][Dim], double *v_pot){
         }     
     }
 }
-
-
 /* Initialisation of the position and velocities of the particles. (Changes the entries in the array that calls it??) ./a.out 0.0001 0.5 100 1.1 1.2 1.0 datafile will run each of the elements seperated by commas*/
 /* Keeping the centre of velocity constant so the box doesn't drift */
-
 void initpart (double pos[PartNo][Dim], double vel[PartNo][Dim], double temperature, double boxdims[Dim]){
 
 	int i, d;
@@ -101,13 +92,7 @@ void initpart (double pos[PartNo][Dim], double vel[PartNo][Dim], double temperat
         }
     }
 }
-
-
-
-
-
-/* Integration step. Implementing the Verlet algorithm for updating positions, velocities - with provided acc. This section of codes also introduces a way for the boundary of the box to be established - the particles density remaining constant in this way */
-
+/* Integration algorithm */
 void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[PartNo][Dim], double dt, double *t, double *KinE, double boxdims[Dim]){
 
 	int i, d;
@@ -120,7 +105,7 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
 		for (d=0; d<Dim; d++){
             
             
-            newpos = pos[i][d]+ vel[i][d] * dt;
+            newpos = pos[i][d] + vel[i][d] * dt;
             vel[i][d] += 0.5 * acc[i][d] * dt;
 			while (newpos > boxdims[d]){
 			
@@ -149,9 +134,49 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
     }
     *t += dt;
 } 
+/* Periodic interactions */
+void per_int (double pos[PartNo][Dim], double acc[PartNo][Dim], double boxdims[Dim]){
+
+double *per_arr = malloc(sizeof(3*PartNo))
+int i, n, d;
+
+for ( i = 0; i < PartNo; i++)
+{
+    if (pos[i][0] < 2.5*sig && pos[i][1] < 2.5*sig)
+    {
+        per_arr[k][0] = pos[i][0] + boxdims[0]
+        per_arr[k][1] = pos[i][1]
+        k++
+    }
+    /* TODO: Complete sorting out the boundary conditions for the array interactions */
+}
+
+        
+}
 
 
 
+/* The energies are written to a simple text file: timestamp, kinetic energy and potetial energy. */
+void writeenergies(double KinE, double t, char filename[Filenamelength], double v_pot){
+    
+    char filenameupdated[Filenamelength];
+    
+    FILE *KineFile;
+    
+    strcpy(filenameupdated, filename);
+    strcat(filenameupdated, "_E_list.txt"); // data written to filename that is pure text space seperated into 4 columns
+    
+    KineFile = fopen(filenameupdated, "a");
+
+    fprintf(KineFile, "%f %f %f %f\n", t, KinE, v_pot, KinE + v_pot);
+    
+    fclose(KineFile);
+    
+}
+
+
+
+/* Creating a mathematica to animate the motions of the particles
 void writepositions(double pos[PartNo][Dim], char filename[Filenamelength], double boxdims[Dim]){
     
     int i;
@@ -176,34 +201,6 @@ void writepositions(double pos[PartNo][Dim], char filename[Filenamelength], doub
     fclose(posfile);
     
 }
-
-/* The energies are written to a simple text file: timestamp, kinetic energy and potetial energy. */
-
-void writeenergies(double KinE, double t, char filename[Filenamelength], double v_pot){
-    
-    char filenameupdated[Filenamelength];
-    
-    FILE *KineFile;
-    
-    strcpy(filenameupdated, filename);
-    strcat(filenameupdated, "_E_list.txt"); // data written to filename that is pure text space seperated into 4 columns
-    
-    KineFile = fopen(filenameupdated, "a");
-
-    fprintf(KineFile, "%f %f %f %f\n", t, KinE, v_pot, KinE + v_pot);
-    
-    fclose(KineFile);
-    
-}
-
-
-
-/* Creating a mathematica to animate the motions of the particles */
-
-
-
-
-
 /* void tidyupmathematicafile(double pos[PartNo][Dim], char filename[Filenamelength], double boxdims[Dim]){
     
     int i;
@@ -229,7 +226,6 @@ void writeenergies(double KinE, double t, char filename[Filenamelength], double 
     fclose(posfile);
     
 }
-
 void startmathematica(char filename[Filenamelength]){
     
     char filenameupdated[Filenamelength];
