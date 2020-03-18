@@ -35,8 +35,7 @@ void lj_force (double pos[PartNo][Dim], double acc[PartNo][Dim]){
     double f_lj, r;
     int i, j, d;
     for (i=0; i<PartNo; i++){
-	    for (d=0; d < Dim; d++){
-		acc[i][d] = 0.0;
+	    for (d=0; d < Dim; d++){ // Removed zero'd acceleration
             for (j = i+1; j < PartNo; j++){
 		    r = sqrt(pow(pos[i][0]-pos[j][0],2) + pow(pos[i][1]-pos[j][1],2)); // Distance calculation
 
@@ -139,57 +138,94 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
     }
     *t += dt;
 } 
-/* Periodic interactions */
-void per_int (double pos[PartNo][Dim], double boxdims[Dim]){
 
-    int *per_arr = malloc(sizeof(3*PartNo));
+/* Periodic interactions: creating periodic images of particles */
+int per_int (double pos[PartNo][Dim], double boxdims[Dim], double  per_arr[3*PartNo][Dim]){
+    
     int i, k;
 
 for (i = 0; i < PartNo; i++)
 {
     if (pos[i][0] < 2.5*sig && pos[i][1] < 2.5*sig)
     {
-        per_arr[k] = pos[i][0] + boxdims[0] + pos[i][1] + boxdims[1];
+        per_arr[k][0] = pos[i][0] + boxdims[0]; 
+        per_arr[k][1] = pos[i][1] + boxdims[1];
         k++;
     }
     if (pos[i][0] < boxdims[0] && pos [i][1] < 2.5*sig)
     {
-        per_arr[k] = pos[i][0] + pos[i][1] + boxdims[1];
+        per_arr[k][0] = pos[i][0];
+        per_arr[k][1] = pos[i][1] + boxdims[1];
         k++;
     }
     if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] < 2.5*sig)
     {
-        per_arr[k] = pos[i][0] - boxdims[0] + pos[i][1] + boxdims[1];
+        per_arr[k][0] = pos[i][0] - boxdims[0];
+        per_arr[k][1] = pos[i][1] + boxdims[1];
         k++;
     }
     if (pos[i][0] < 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig)
     {
-        per_arr[k] = pos[i][0] + boxdims[0] + pos[i][1] - boxdims[1];
+        per_arr[k][0] = pos[i][0] + boxdims[0];
+        per_arr[k][1] = pos[i][1] - boxdims[1];
         k++;
     }
     if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig)
     {
-        per_arr[k] = pos[i][0] - boxdims[0] + pos[i][1] - boxdims[1];
+        per_arr[k][0] = pos[i][0] - boxdims[0];
+        per_arr[k][1] = pos[i][1] - boxdims[1];
         k++;
     }
     if (pos[i][0] < 2.5*sig && pos[i][1] < boxdims[1])
     {
-        per_arr[k] = pos[i][0] + boxdims[0] + pos[i][1];
+        per_arr[k][0] = pos[i][0] + boxdims[0];
+        per_arr[k][1] = pos[i][1];
         k++;
     }
     if (pos[i][0] < boxdims[0] && pos[i][1] > boxdims[1] - 2.5*sig)
     {
-        per_arr[k] = pos[i][0] + pos[i][1] - boxdims[1];
+        per_arr[k][0] = pos[i][0];
+        per_arr[k][1] = pos[i][1] - boxdims[1];
         k++;
     }
     if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig)
     {
-        per_arr[k] = pos[i][0] - boxdims[0] + pos[i][1];
+        per_arr[k][0] = pos[i][0] - boxdims[0];
+        per_arr[k][1] = pos[i][1];
         k++;
     }
+    return k;
 }
 }
+
+
+
+/* Periodic force */
+void per_forces (double pos[PartNo][Dim], double acc[PartNo][Dim], double per_arr[3*PartNo][Dim], double boxdims[Dim]){
+
+int i, k, l, d;
+double r, f_lp;
+l = per_int(pos, boxdims, per_arr);
+for (k = 0; k < l ; k++){
+    for (i = 0; i < PartNo; i++){
+        r = sqrt(pow(pos[i][0]-per_arr[k][0],2) + pow(pos[i][1]-per_arr[k][1],2));
+        for (d = 0; d < Dim; d++)
+        {
+        if (r <= 2.5*sig) { // Lower truncation
+            f_lp = (-4*eps*(1/r+r_shift)*(6*pow(sig,6)/pow(r+r_shift,6)-12*pow(sig,12)/pow(r+r_shift,12))) * (pos[i][d]-pos[k][d])/(r);
+        }
+		else if (r > 2.5*sig){
+		 	f_lp = 0.0;
+		} 
+        acc[i][d] += f_lp;
+        }
+        }
     
+    }
+    
+}
+
+
 /* The energies are written to a simple text file: timestamp, kinetic energy and potetial energy. */
 void writeenergies(double KinE, double t, char filename[Filenamelength], double v_pot){
     
@@ -292,6 +328,7 @@ int main(int argc, const char *argv[]) {
     double positions[PartNo][Dim]; // 2D array for particle positions
     double velocities[PartNo][Dim]; // 2D array for particle vel
     double accelerations[PartNo][Dim]; // 2D array for particle accelerations
+    double per_arr[3*PartNo][Dim]; // 2D array for periodic ghost particles
     char outputfilename[Filenamelength];
     int outputinterval, stepssinceoutput=0;
 
@@ -307,9 +344,11 @@ int main(int argc, const char *argv[]) {
 
     printf("code has read in delta t= %.4e end time=%.4e interval for data=%d\n box x=%.4e box y=%.4e initial t=%.4e file=%s\n",deltat, endtime, outputinterval, boxdims[0], boxdims[1], initi_temp, outputfilename);
     
-    per_int(positions, boxdims);
+
     initpart(positions, velocities, initi_temp, boxdims);
     lj_force(positions, accelerations);
+    per_int(positions, boxdims, per_arr);
+    per_forces(positions, accelerations, per_arr, boxdims);
     //startmathematica(outputfilename);
     while (curr_time < endtime) {
         
