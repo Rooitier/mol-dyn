@@ -141,7 +141,7 @@ for (k = 0; k < l ; k++){
         	r = sqrt(pow(pos[i][0]-per_arr[k][0],2) + pow(pos[i][1]-per_arr[k][1],2));
         	for (d = 0; d < Dim; d++) {
         		if (r <= 2.5*sig) { // Lower truncation
-            	f_lj = (-4*eps*(1/(r+r_shift))*(6*pow(sig,6)/pow(r+r_shift,6)-12*pow(sig,12)/pow(r+r_shift,12))) * (pos[i][d]-per_arr[k][d])/(r);// segfault was here you had pos[i][d]-pos[k][d] instead of pos[i][d]-per_arr[k][d]
+            	f_lj = (-4*eps*(1/(r+r_shift))*(6*pow(sig,6)/pow(r+r_shift,6)-12*pow(sig,12)/pow(r+r_shift,12))) * (pos[i][d]-per_arr[k][d])/r;// segfault was here you had pos[i][d]-pos[k][d] instead of pos[i][d]-per_arr[k][d]
         		}
 						else if (r > 2.5*sig){
 		 					f_lj = 0.0;
