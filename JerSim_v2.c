@@ -77,50 +77,52 @@ int per_int (double pos[PartNo][Dim], double boxdims[Dim], double  per_arr[3*Par
     int i, k=0;
 
 		for (i = 0; i < PartNo; i++)
-		{
-    	if (pos[i][0] < 2.5*sig && pos[i][1] < 2.5*sig)
+		{ 
+        // Corners
+    	if (pos[i][0] < 2.5*sig && pos[i][1] < 2.5*sig) // Bottom left
     	{
         	per_arr[k][0] = pos[i][0] + boxdims[0];
         	per_arr[k][1] = pos[i][1] + boxdims[1];
         	k++;
     	}
-    	if (pos[i][0] < boxdims[0] && pos [i][1] < 2.5*sig)
+        if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] < 2.5*sig) // Bottom right
+    	{
+        	per_arr[k][0] = pos[i][0] - boxdims[0];
+        	per_arr[k][1] = pos[i][1] + boxdims[1];
+        	k++;
+    	}
+    	if (pos[i][0] < 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig) // Top left
+    	{
+        	per_arr[k][0] = pos[i][0] + boxdims[0];
+        	per_arr[k][1] = pos[i][1] - boxdims[1];
+        	k++;
+    	}
+    	if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig) // Top right
+    	{
+        	per_arr[k][0] = pos[i][0] - boxdims[0];
+        	per_arr[k][1] = pos[i][1] - boxdims[1];
+        	k++;
+    	} 
+        // Edges
+        if (pos[i][0] < boxdims[0] && pos [i][1] < 2.5*sig) // Bottom
     	{
         	per_arr[k][0] = pos[i][0];
         	per_arr[k][1] = pos[i][1] + boxdims[1];
         	k++;
     	}
-    	if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] < 2.5*sig)
-    	{
-        	per_arr[k][0] = pos[i][0] - boxdims[0];
-        	per_arr[k][1] = pos[i][1] + boxdims[1];
-        	k++;
-    	}
-    	if (pos[i][0] < 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig)
-    	{
-        	per_arr[k][0] = pos[i][0] + boxdims[0];
-        	per_arr[k][1] = pos[i][1] - boxdims[1];
-        	k++;
-    	}
-    	if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig)
-    	{
-        	per_arr[k][0] = pos[i][0] - boxdims[0];
-        	per_arr[k][1] = pos[i][1] - boxdims[1];
-        	k++;
-    	}
-    	if (pos[i][0] < 2.5*sig && pos[i][1] < boxdims[1])
+    	if (pos[i][0] < 2.5*sig && pos[i][1] < boxdims[1]) // Left
     	{
         	per_arr[k][0] = pos[i][0] + boxdims[0];
         	per_arr[k][1] = pos[i][1];
         	k++;
     	}
-    	if (pos[i][0] < boxdims[0] && pos[i][1] > boxdims[1] - 2.5*sig)
+    	if (pos[i][0] < boxdims[0] && pos[i][1] > boxdims[1] - 2.5*sig) // Top
     	{
         	per_arr[k][0] = pos[i][0];
         	per_arr[k][1] = pos[i][1] - boxdims[1];
         	k++;
     	}
-    	if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] > boxdims[1] - 2.5*sig)
+    	if (pos[i][0] > boxdims[0] - 2.5*sig && pos[i][1] > boxdims[1]) // Right
     	{
         	per_arr[k][0] = pos[i][0] - boxdims[0];
         	per_arr[k][1] = pos[i][1];
@@ -176,14 +178,12 @@ void initpart (double pos[PartNo][Dim], double vel[PartNo][Dim], double temperat
     double VCoM[Dim];
 
 		srand48((long)time(NULL));
-		VCoM[0] = 0.0;
-		VCoM[1] = 0.0;
 		for (i=0; i<PartNo; i++) {
 
 				for (d=0; d<Dim; d++) {
 
-						pos[i][d] = drand48()*boxdims[d]; // Places the particle at a random position within 				the boxes length
-						vel[i][d] = sampgauss(temperature); // Sample velocity from the Maxwell distribution 				using Box-Muller transform. *This can be hard-coded to test the interaction potentials 				later on.
+						pos[i][d] = drand48()*boxdims[d]; // Places the particle at a random position within the boxes length
+						vel[i][d] = sampgauss(temperature); // Sample velocity from the Maxwell distribution using Box-Muller transform. *This can be hard-coded to test the interaction potentials 				later on.
 
             VCoM[d] += vel[i][d];
 				}
@@ -211,7 +211,8 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
 
             	newpos = pos[i][d] + vel[i][d] * dt;
             	vel[i][d] += 0.5 * acc[i][d] * dt;
-							while (newpos > boxdims[d]){
+
+				while (newpos > boxdims[d]){
 
 									newpos -=  boxdims[d]; // Check the positions of the particles in the loop and updates it.
 
@@ -221,28 +222,40 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
                 	newpos += boxdims[d];
             	}
 
+    	pos[i][d] = newpos;
+        acc[i][d] = 0.0;
 
-
-							pos[i][d] = newpos;
-        			acc[i][d] = 0.0;
-
-				}
+			    }
 		}
-		per_forces(pos, acc, per_arr, boxdims);
+	per_forces(pos, acc, per_arr, boxdims);
     lj_force(pos,acc);
 
     for (i=0; i<PartNo; i++){
         for (d=0; d<Dim; d++){
             vel[i][d] += 0.5 * dt * acc[i][d];
-            *KinE += 0.5*vel[i][d]*vel[i][d];
-
         }
+        *KinE += 0.5*(vel[i][0]*vel[i][0] + vel[i][1]*vel[i][1]);
     }
     *t += dt;
-	}
+}
 
 
+int box_p_v (double pos[PartNo][Dim], double acc[PartNo][Dim], double temperature, double n_step){
 
+int i, n, j;
+
+
+    for (i = 0; i < PartNo; i++)
+    {
+        temp_pv += (1/Dim) * (pos[i][0]*acc[i][0] + pos[i][1]*acc[i][1]);
+    }
+    
+    for (j = 0; j < n; j++)
+    {
+        
+    }
+    
+}
 
 
 
@@ -343,9 +356,11 @@ int main(int argc, const char *argv[]) {
     double boxdims[Dim]; // Array for x and y dimensions of the box
     double initi_temp; // Temperature for distribution sampling
     double curr_time=0.0, deltat, endtime; // Time initialisation
-    double VCoM =0.0; // Centre-of-velocity
+    double n_step = endtime/deltat;
+    double VCoM[Dim] = {0}; // Centre-of-velocity
     double Kinetic=0.0; // Temporary storage of kinetic energy
     double Potential=0.0; // Storage of potential energy
+    double Pressure=0.0; // Storage of pressure
     double positions[PartNo][Dim]; // 2D array for particle positions
     double velocities[PartNo][Dim]; // 2D array for particle vel
     double accelerations[PartNo][Dim] = {0}; // 2D array for particle accelerations
@@ -363,7 +378,7 @@ int main(int argc, const char *argv[]) {
     strcpy(outputfilename, argv[7]);
 
     printf("code has read in delta t= %.4e end time=%.4e interval for data=%d\n box x=%.4e box y=%.4e initial t=%.4e file=%s\n",deltat, endtime, outputinterval, boxdims[0], boxdims[1], initi_temp, outputfilename);
-
+    
     initpart(positions, velocities, initi_temp, boxdims);
     lj_force(positions, accelerations);
     per_forces(positions, accelerations, per_arr, boxdims);
@@ -380,8 +395,8 @@ int main(int argc, const char *argv[]) {
             stepssinceoutput=0;
 						lj_pot(positions, &Potential);
 						lj_per_pot(positions, &Potential, per_arr, boxdims);
-           // writepositions (positions, outputfilename, boxdims);
-            writeenergies (Kinetic, curr_time, outputfilename, Potential);
+                        // writepositions (positions, outputfilename, boxdims);
+                        writeenergies (Kinetic, curr_time, outputfilename, Potential);
 
         }
 
