@@ -13,7 +13,10 @@
 #define sig 1
 #define eps 1
 #define r_shift 2.5*sig
+
+
 /*-----------------*/
+
 
 
 /* Box-Muller transformation is used to produce random samples for the Maxwell distribution which will be used to provide the intial values of the speed of the particles */
@@ -157,7 +160,7 @@ for (k = 0; k < l ; k++){
 void lj_per_pot (double pos[PartNo][Dim], double *v_pot, double per_arr[3*PartNo][Dim], double boxdims[Dim]){
     int i, l, k;
     double r;
-		l = per_int(pos, boxdims, per_arr);
+	l = per_int(pos, boxdims, per_arr);
     for (k=0; k<l; k++){
         for (i=0; i < PartNo; i++){
             r = sqrt(pow(pos[i][0]-per_arr[k][0],2) + pow(pos[i][1]-per_arr[k][1],2));
@@ -188,7 +191,7 @@ void initpart (double pos[PartNo][Dim], double vel[PartNo][Dim], double temperat
             VCoM[d] += vel[i][d];
 				}
 		}
-		for ( d = 0; d < Dim; d++){
+	for ( d = 0; d < Dim; d++){
         VCoM[d] /= PartNo;
     }
     for ( i = 0; i < PartNo; i++){
@@ -240,21 +243,17 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
 }
 
 
-int box_p_v (double pos[PartNo][Dim], double acc[PartNo][Dim], double temperature, double n_step){
+void box_p_v (double pos[PartNo][Dim], double acc[PartNo][Dim], double temperature, double pressure, double n_step){
 
 int i, n, j;
-
-
-    for (i = 0; i < PartNo; i++)
+double temp_pv;
+temp_pv = pressure; 
+    for (i = 0; i < PartNo; i++) // Calculating pressure for each time step
     {
-        temp_pv += (1/Dim) * (pos[i][0]*acc[i][0] + pos[i][1]*acc[i][1]);
+        temp_pv += PartNo*temperature - (1/Dim) * (pos[i][0]*acc[i][0] + pos[i][1]*acc[i][1]); 
     }
-    
-    for (j = 0; j < n; j++)
-    {
-        
-    }
-    
+    pressure = (1/n_step) * temp_pv; // Value of the average pressure
+    printf("pressure = %f\n", pressure);
 }
 
 
@@ -355,12 +354,11 @@ int main(int argc, const char *argv[]) {
 
     double boxdims[Dim]; // Array for x and y dimensions of the box
     double initi_temp; // Temperature for distribution sampling
-    double curr_time=0.0, deltat, endtime; // Time initialisation
-    double n_step = endtime/deltat;
+    double curr_time=0.0, deltat, endtime, steps; // Time initialisation
     double VCoM[Dim] = {0}; // Centre-of-velocity
     double Kinetic=0.0; // Temporary storage of kinetic energy
     double Potential=0.0; // Storage of potential energy
-    double Pressure=0.0; // Storage of pressure
+    double pressure = 0.0; // Storage of pressure
     double positions[PartNo][Dim]; // 2D array for particle positions
     double velocities[PartNo][Dim]; // 2D array for particle vel
     double accelerations[PartNo][Dim] = {0}; // 2D array for particle accelerations
@@ -368,7 +366,7 @@ int main(int argc, const char *argv[]) {
     char outputfilename[Filenamelength];
     int outputinterval, stepssinceoutput=0;
 
-
+    steps = atof(argv[2])/atof(argv[1]);
     deltat = atof(argv[1]);
     endtime = atof(argv[2]);
     outputinterval = atof(argv[3]);
@@ -378,15 +376,17 @@ int main(int argc, const char *argv[]) {
     strcpy(outputfilename, argv[7]);
 
     printf("code has read in delta t= %.4e end time=%.4e interval for data=%d\n box x=%.4e box y=%.4e initial t=%.4e file=%s\n",deltat, endtime, outputinterval, boxdims[0], boxdims[1], initi_temp, outputfilename);
-    
+    printf("n = %f\n", steps);
+
     initpart(positions, velocities, initi_temp, boxdims);
     lj_force(positions, accelerations);
-    per_forces(positions, accelerations, per_arr, boxdims);
+    per_forces(positions, accelerations, per_arr, boxdims);        
+    box_p_v(positions, accelerations, initi_temp, pressure, steps);
     //startmathematica(outputfilename);
     while (curr_time < endtime) {
 
-        // calaccel(positions, accelerations);
-
+        lj_force(positions, accelerations);
+        per_forces(positions, accelerations, per_arr, boxdims);
         move_part(positions, velocities, accelerations, deltat, &curr_time, &Kinetic, boxdims, per_arr);
 
         stepssinceoutput += 1;
@@ -395,6 +395,7 @@ int main(int argc, const char *argv[]) {
             stepssinceoutput=0;
 						lj_pot(positions, &Potential);
 						lj_per_pot(positions, &Potential, per_arr, boxdims);
+
                         // writepositions (positions, outputfilename, boxdims);
                         writeenergies (Kinetic, curr_time, outputfilename, Potential);
 
