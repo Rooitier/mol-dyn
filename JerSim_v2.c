@@ -148,9 +148,9 @@ for (k = 0; k < l ; k++){
         		if (r <= 2.5*sig) { // Lower truncation
             	f_lj = (-4*eps*(1/(r+r_shift))*(6*pow(sig,6)/pow(r+r_shift,6)-12*pow(sig,12)/pow(r+r_shift,12))) * (pos[i][d]-per_arr[k][d])/r;// segfault was here you had pos[i][d]-pos[k][d] instead of pos[i][d]-per_arr[k][d]
         		}
-						else if (r > 2.5*sig){
-		 					f_lj = 0.0;
-						}
+				else if (r > 2.5*sig){
+		 				f_lj = 0.0;
+				}
         		acc[i][d] += f_lj;
         	}
         }
@@ -243,17 +243,26 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
 }
 
 
-void box_p_v (double pos[PartNo][Dim], double acc[PartNo][Dim], double temperature, double pressure, double n_step){
+void box_p_v (double pos[PartNo][Dim], double acc[PartNo][Dim], double temperature, double pressure, double n_step, double per_arr[3*PartNo][Dim], double boxdims[Dim]){
 
-int i, n, j;
-double temp_pv;
-temp_pv = pressure; 
-    for (i = 0; i < PartNo; i++) // Calculating pressure for each time step
-    {
-        temp_pv += PartNo*temperature - (1/Dim) * (pos[i][0]*acc[i][0] + pos[i][1]*acc[i][1]); 
+int i, n, d, j, l, k;
+double temp_pv, r, t;
+temp_pv = pressure;
+lj_force(pos, acc);
+l = per_int(pos, boxdims, per_arr); 
+for (i = 0; i < PartNo; i++){
+    for (k = 0; k < l; k++){
+        t = sqrt(pow(pos[i][0]-per_arr[k][0],2) + pow(pos[i][1]-per_arr[k][1],2));
+            for (j = i+1; i < PartNo; j++){
+                r = sqrt(pow(pos[i][0]-pos[j][0],2) + pow(pos[i][1]-pos[j][1],2));
+                for ( d = 0; i < Dim; d++){
+                    temp_pv += ( r + t ) * acc[i][d]; 
+            }
+        }
     }
     pressure = (1/n_step) * temp_pv; // Value of the average pressure
     printf("pressure = %f\n", pressure);
+}
 }
 
 
@@ -381,7 +390,7 @@ int main(int argc, const char *argv[]) {
     initpart(positions, velocities, initi_temp, boxdims);
     lj_force(positions, accelerations);
     per_forces(positions, accelerations, per_arr, boxdims);        
-    box_p_v(positions, accelerations, initi_temp, pressure, steps);
+    box_p_v(positions, accelerations, initi_temp, pressure, steps, per_arr, boxdims);
     //startmathematica(outputfilename);
     while (curr_time < endtime) {
 
