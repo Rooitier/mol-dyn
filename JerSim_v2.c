@@ -245,24 +245,18 @@ void move_part(double pos[PartNo][Dim], double vel[PartNo][Dim], double acc[Part
 
 void box_p_v (double pos[PartNo][Dim], double acc[PartNo][Dim], double temperature, double pressure, double n_step, double per_arr[3*PartNo][Dim], double boxdims[Dim]){
 
-int i, n, d, j, l, k;
-double temp_pv, r, t;
-temp_pv = pressure;
-lj_force(pos, acc);
-l = per_int(pos, boxdims, per_arr); 
-for (i = 0; i < PartNo; i++){
-    for (k = 0; k < l; k++){
-        t = sqrt(pow(pos[i][0]-per_arr[k][0],2) + pow(pos[i][1]-per_arr[k][1],2));
-            for (j = i+1; i < PartNo; j++){
-                r = sqrt(pow(pos[i][0]-pos[j][0],2) + pow(pos[i][1]-pos[j][1],2));
-                for ( d = 0; i < Dim; d++){
-                    temp_pv += ( r + t ) * acc[i][d]; 
-            }
-        }
+int i, j, d;
+double temp_pv;
+
+for ( i = 0; i < PartNo; i++)
+{
+    for ( j = 0; j < count; i++)
+    {
+        /* code */
     }
-    pressure = (1/n_step) * temp_pv; // Value of the average pressure
-    printf("pressure = %f\n", pressure);
+    
 }
+
 }
 
 
